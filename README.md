@@ -9,7 +9,7 @@ Requirements:
 PHP5.5 and Yii2 Framework.
 
 Installation
-------------
+=================
 
 The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
 
@@ -27,8 +27,19 @@ or add
 
 to the `require` section of your `composer.json` file.
 
+
+Cache Setup
+-----------
+
+This extension offers the ability to store and updates data in a local cache to circumvent API restrictions. 
+Several database tables have to be created using the following migration script:
+
+```
+./yii migrate --migrationPath=./vendor/drsdre/yii2-oddsgg-api/migrations
+```
+
 Usage
------
+=================
 
 You need to setup the client as application component:
 
@@ -52,23 +63,7 @@ $client = new \drsdre\OddsGG\Client([
 ]);
 ```
 
-How to use API:
-=================
-
-See http://www.odds.gg/UserAccount/UserAccount for API documentation.
-
-
-Cache setup:
-=================
-
-This extension allows to store and update data in a local cache to facilitate quicker access and easier data updates. 
-To enable this features, several database tables have to be created using the following migration script:
-
-```
-./yii migrate --migrationPath=./vendor/drsdre/yii2-oddsgg-api/migrations
-```
-
-
-
-That's all!
+API documentation
 -----------
+
+See http://www.odds.gg/UserAccount/UserAccount for full API documentation.

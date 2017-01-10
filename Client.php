@@ -66,15 +66,15 @@ class Client extends yii\httpclient\Client {
 	 *
 	 * @return array process statistics
 	 */
-	public function updateCache($force = false, $expire = false) {
+	public function updateCache($force = false, $expire = true) {
 
 		$cache = new Cache($this);
 
 		// Init data if force or no existing categories
 		if ($force === true || OddsGGSport::find()->count() == 0) {
-			$cache->initData();
+			$cache->update(true);
 		} elseif ($force === false) {
-			$cache->updateData();
+			$cache->update();
 		}
 
 		// Expire data

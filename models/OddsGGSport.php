@@ -3,6 +3,7 @@
 namespace drsdre\OddsGG\models;
 
 use Yii;
+use yii\base\Exception;
 use yii\helpers\ArrayHelper;
 use yii\behaviors\TimestampBehavior;
 
@@ -60,7 +61,36 @@ class OddsGGSport extends \yii\db\ActiveRecord
         ];
     }
 
-    /**
+	/**
+	 * Update or insert record
+	 *
+	 * @param $id
+	 * @param $name
+	 *
+	 * @return OddsGGSport|static
+	 */
+	public static function upsert($id, $name) {
+		// Find record by id
+		$Record = self::findOne($id);
+
+		// If no record found, make it
+		if ( ! $Record) {
+			$Record = new self();
+			$Record->id = $id;
+		}
+
+		// Update parameters
+		$Record->name = $name;
+
+		// If record changed, save it
+		if ( $Record->dirtyAttributes && ! $Record->save() ) {
+			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
+		}
+
+		return $Record;
+	}
+	
+	/**
      * @return array
      */
     public static function getForDropdown()
@@ -69,6 +99,7 @@ class OddsGGSport extends \yii\db\ActiveRecord
 
         return ArrayHelper::map($models, 'id', 'name');
     }
+
 
 	/**
 	 * ==== Connections to other records

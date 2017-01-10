@@ -11,7 +11,7 @@ use drsdre\OddsGG\models\OddsGGMatch;
 use drsdre\OddsGG\models\OddsGGMarket;
 use drsdre\OddsGG\models\OddsGGOdd;
 
-class m151002_090000_init extends Migration {
+class m170110_090000_init extends Migration {
 
 	public function up() {
 		$tableOptions = null;
@@ -41,13 +41,13 @@ class m151002_090000_init extends Migration {
 		$this->createTable( OddsGGTournament::tableName(), [
 			'id'         => $this->primaryKey(),
 			'Name'       => $this->string( 255 )->notNull(),
-			'CategoryId' => $this->int( 11 )->notNull(),
+			'LeagueId' => $this->int( 11 )->notNull(),
 			'Timestamp'  => $this->int( 11 )->notNull(),
 			'created_at' => $this->int( 11 )->notNull(),
 			'updated_at' => $this->int( 11 )->notNull(),
 		], $tableOptions );
 
-		$this->addForeignKey( OddsGGTournament::tableName() . '_CategoryId', OddsGGLeague::tableName(), 'CategoryId',
+		$this->addForeignKey( OddsGGTournament::tableName() . '_LeagueId', OddsGGLeague::tableName(), 'LeagueId',
 			OddsGGSport::tableName(), 'id', 'CASCADE', 'RESTRICT' );
 
 		$this->createTable( OddsGGTeam::tableName(), [
@@ -64,8 +64,8 @@ class m151002_090000_init extends Migration {
 			'HomeTeamId'   => $this->int( 11 )->notNull(),
 			'AwayTeamId'   => $this->int( 11 )->notNull(),
 			'Score'        => $this->string( 255 )->notNull(),
-			'Status'       => $this->int( 11 )->notNull(),
-			'StreamUrl'    => $this->int( 4000 )->notNull(),
+			'Status'       => $this->int( 11 )->null(),
+			'StreamUrl'    => $this->int( 4000 )->null(),
 			'created_at'   => $this->int( 11 )->notNull(),
 			'updated_at'   => $this->int( 11 )->notNull(),
 		], $tableOptions );
@@ -134,7 +134,7 @@ class m151002_090000_init extends Migration {
 
 		$this->dropTable( OddsGGTeam::tableName() );
 
-		$this->dropForeignKey( OddsGGTournament::tableName() . '_CategoryId', OddsGGTournament::tableName() );
+		$this->dropForeignKey( OddsGGTournament::tableName() . '_LeagueId', OddsGGTournament::tableName() );
 		$this->dropTable( OddsGGTournament::tableName() );
 
 		$this->dropForeignKey( OddsGGLeague::tableName() . '_SportId', OddsGGLeague::tableName() );

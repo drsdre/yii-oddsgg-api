@@ -55,11 +55,88 @@ class OddsGGMatch extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['id', 'SportId', 'TournamentId', 'HomeTeamId', 'AwayTeamId'], 'required'],
+            [['id', 'SportId', 'TournamentId', 'HomeTeamId', 'AwayTeamId', 'Score'], 'required'],
             [['id', 'SportId', 'TournamentId', 'Status', 'HomeTeamId', 'AwayTeamId'], 'integer'],
-            [['Score', 'StreamUrl'], 'string'],
+	        [['Status'], 'in', 'range' => self::$statuses ],
+	        [
+		        [ 'SportId' ],
+		        'exist',
+		        'skipOnError'     => true,
+		        'targetClass'     => OddsGGSport::className(),
+		        'targetAttribute' => [ 'SportId' => 'id' ],
+	        ],
+	        [
+		        [ 'TournamentId' ],
+		        'exist',
+		        'skipOnError'     => true,
+		        'targetClass'     => OddsGGTournament::className(),
+		        'targetAttribute' => [ 'TournamentId' => 'id' ],
+	        ],
+	        [
+		        [ 'HomeTeamId' ],
+		        'exist',
+		        'skipOnError'     => true,
+		        'targetClass'     => OddsGGTeam::className(),
+		        'targetAttribute' => [ 'HomeTeamId' => 'id' ],
+	        ],
+	        [
+		        [ 'AwayTeamId' ],
+		        'exist',
+		        'skipOnError'     => true,
+		        'targetClass'     => OddsGGTeam::className(),
+		        'targetAttribute' => [ 'AwayTeamId' => 'id' ],
+	        ],
+	        [['Score', 'StreamUrl'], 'string'],
         ];
     }
+
+	/**
+	 * Update or insert record
+	 *
+	 * @param int $id
+	 * @param int $SportId
+	 * @param int $TournamentId
+	 * @param int $HomeTeamId
+	 * @param int $AwayTeamId
+	 * @param int $Status
+	 * @param string $Score
+	 * @param string $StreamUrl
+	 *
+	 * @return OddsGGMatch|static
+	 */
+	public static function upsert(
+		int $id,
+		int $SportId,
+		int $TournamentId,
+		int $HomeTeamId,
+		int $AwayTeamId,
+		string $Score,
+		int $Status = null,
+		string $StreamUrl = null
+	) {
+		// Find record by id
+		$Record = self::findOne($id);
+
+		// If no record found, make it
+		if ( ! $Record) {
+			$Record = new self();
+			$Record->id = $id;
+		}
+
+		// Update parameters
+		$Record->Name = $name;
+		$Record->MatchId = $MatchId;
+		$Record->IsLive = $IsLive;
+		$Record->Status = $Status;
+		$Record->Timestamp = $Timestamp;
+
+		// If record changed, save it
+		if ( $Record->dirtyAttributes && ! $Record->save() ) {
+			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
+		}
+
+		return $Record;
+	}
 
     /**
      * @inheritdoc

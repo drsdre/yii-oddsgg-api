@@ -60,12 +60,28 @@ class OddsGGOdd extends \yii\db\ActiveRecord
         return [
             [['id', 'Name', 'Title', 'Value', 'IsActive', 'Status', 'MatchId', 'MarketId', 'Timestamp'], 'required'],
             [['id', 'Status', 'MarketId', 'MarketId', 'Timestamp'], 'integer'],
+	        [['Status'], 'in', 'range' => self::$statuses ],
+	        [
+		        [ 'MatchId' ],
+		        'exist',
+		        'skipOnError'     => true,
+		        'targetClass'     => OddsGGMatch::className(),
+		        'targetAttribute' => [ 'MatchId' => 'id' ],
+	        ],
+	        [
+		        [ 'MarketId' ],
+		        'exist',
+		        'skipOnError'     => true,
+		        'targetClass'     => OddsGGMarket::className(),
+		        'targetAttribute' => [ 'MarketId' => 'id' ],
+	        ],
 	        [['IsActive'], 'boolean'],
             [['Name', 'Title', 'Value'], 'string'],
         ];
     }
 
-    /**
+
+	/**
      * @inheritdoc
      */
     public function behaviors()
@@ -75,7 +91,7 @@ class OddsGGOdd extends \yii\db\ActiveRecord
         ];
     }
 
-    /**
+	/**
      * @inheritdoc
      */
     public function attributeLabels()
@@ -93,7 +109,46 @@ class OddsGGOdd extends \yii\db\ActiveRecord
         ];
     }
 
-    /**
+	/**
+	 * Update or insert record
+	 *
+	 * @param int $id
+	 * @param string $Name
+	 * @param string $Title
+	 * @param bool $IsActive
+	 * @param int $Status
+	 * @param int $MatchId
+	 * @param int $Timestamp
+	 *
+	 * @return OddsGGOdd|static
+	 */
+	public static function upsert(int $id, string $Name, string $Title, bool $IsActive, int $Status, int $MatchId, int $Timestamp) {
+		// Find record by id
+		$Record = self::findOne($id);
+
+		// If no record found, make it
+		if ( ! $Record) {
+			$Record = new self();
+			$Record->id = $id;
+		}
+
+		// Update parameters
+		$Record->Name = $Name;
+		$Record->Title = $Title;
+		$Record->IsActive = $IsActive;
+		$Record->Status = $Status;
+		$Record->MatchId = $MatchId;
+		$Record->Timestamp = $Timestamp;
+
+		// If record changed, save it
+		if ( $Record->dirtyAttributes && ! $Record->save() ) {
+			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
+		}
+
+		return $Record;
+	}
+
+	/**
      * @return array
      */
     public static function getForDropdown()
@@ -120,6 +175,7 @@ class OddsGGOdd extends \yii\db\ActiveRecord
 			return $status;
 		}
 	}
+	
 
 	/**
 	 * ==== Connections to other records

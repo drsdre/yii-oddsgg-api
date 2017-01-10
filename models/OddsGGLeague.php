@@ -36,6 +36,13 @@ class OddsGGLeague extends \yii\db\ActiveRecord
         return [
             [['id', 'CategoryName', 'SportId'], 'required'],
             [['id', 'SportId'], 'integer'],
+	        [
+		        [ 'SportId' ],
+		        'exist',
+		        'skipOnError'     => true,
+		        'targetClass'     => OddsGGSport::className(),
+		        'targetAttribute' => [ 'SportId' => 'id' ],
+	        ],
             [['CategoryName'], 'string'],
         ];
     }
@@ -61,6 +68,36 @@ class OddsGGLeague extends \yii\db\ActiveRecord
             'SportId' => yii::t('app', 'Sport'),
         ];
     }
+
+	/**
+	 * Update or insert record
+	 *
+	 * @param $id
+	 * @param $name
+	 *
+	 * @return OddsGGSport|static
+	 */
+	public static function upsert(int $id, string $CategoryName, int $SportId) {
+		// Find record by id
+		$Record = self::findOne($id);
+
+		// If no record found, make it
+		if ( ! $Record) {
+			$Record = new self();
+			$Record->id = $id;
+		}
+
+		// Update parameters
+		$Record->CategoryName = $CategoryName;
+		$Record->SportId = $SportId;
+
+		// If record changed, save it
+		if ( $Record->dirtyAttributes && ! $Record->save() ) {
+			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
+		}
+
+		return $Record;
+	}
 
     /**
      * @return array
