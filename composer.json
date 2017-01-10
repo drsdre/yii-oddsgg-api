@@ -1,0 +1,28 @@
+{
+  "name": "drsdre/yii2-oddsgg-api",
+  "description": "Yii2 Extension for Odds.gg eSports odds API",
+  "keywords": ["yii2", "extension", "client", "API", "odds.gg", "live esports odds", "esports"],
+  "homepage": "https://github.com/drsdre/yii2-oddsgg-api",
+  "type": "yii2-extension",
+  "license": "BSD-3-Clause",
+  "support": {
+    "issues": "https://github.com/drsdre/yii2-oddsgg-api/issues?state=open",
+    "source": "https://github.com/drsdre/yii2-oddsgg-api",
+    "docs": "http://www.odds.gg/UserAccount/UserAccount"
+  },
+  "authors": [
+    {
+      "name": "Andre Schuurman",
+      "email": "andre.schuurman+yii2-oddsgg-api@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.5.0",
+    "yiisoft/yii2-httpclient": "~2.0.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "drsdre\\BetssonSports\\": ""
+    }
+  }
+}
