@@ -12,13 +12,13 @@ use yii\behaviors\TimestampBehavior;
  * @property integer $id
  * @property string $Name
  * @property integer $LeagueId renamed from CategoryID
- * @property string $Timestamp
+ * @property integer $Timestamp
  * @property integer $created_at
  * @property integer $updated_at
  *
  * @property OddsGGLeague $league
  */
-class OddsGGTournament extends \yii\db\ActiveRecord
+class OddsGGTournament extends ActiveRecordWithUpsert
 {
     /**
      * @inheritdoc
@@ -35,7 +35,7 @@ class OddsGGTournament extends \yii\db\ActiveRecord
     {
         return [
             [['id', 'Name', 'LeagueId', 'Timestamp'], 'required'],
-            [['id', 'LeagueId'], 'integer'],
+            [['id', 'LeagueId', 'Timestamp'], 'integer'],
 	        [
 		        [ 'LeagueId' ],
 		        'exist',
@@ -43,7 +43,7 @@ class OddsGGTournament extends \yii\db\ActiveRecord
 		        'targetClass'     => OddsGGLeague::className(),
 		        'targetAttribute' => [ 'LeagueId' => 'id' ],
 	        ],
-            [['Name', 'Timestamp'], 'string'],
+            [['Name'], 'string'],
         ];
     }
 
@@ -69,40 +69,6 @@ class OddsGGTournament extends \yii\db\ActiveRecord
             'Timestamp' => yii::t('app', 'Timestamp'),
         ];
     }
-
-
-	/**
-	 * Update or insert record
-	 *
-	 * @param int $id
-	 * @param string $Name
-	 * @param int $LeagueId
-	 * @param int $Timestamp
-	 *
-	 * @return OddsGGTournament|static
-	 */
-	public static function upsert(int $id, string $Name, int $LeagueId, int $Timestamp) {
-		// Find record by id
-		$Record = self::findOne($id);
-
-		// If no record found, make it
-		if ( ! $Record) {
-			$Record = new self();
-			$Record->id = $id;
-		}
-
-		// Update parameters
-		$Record->Name = $Name;
-		$Record->LeagueId = $LeagueId;
-		$Record->Timestamp = $Timestamp;
-
-		// If record changed, save it
-		if ( $Record->dirtyAttributes && ! $Record->save() ) {
-			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
-		}
-
-		return $Record;
-	}
 
     /**
      * @return array

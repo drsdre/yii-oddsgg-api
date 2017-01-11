@@ -12,6 +12,7 @@ use yii\behaviors\TimestampBehavior;
  * @property integer $id
  * @property integer $SportId
  * @property integer $TournamentId
+ * @property integer $StartTime
  * @property integer $HomeTeamId
  * @property integer $AwayTeamId
  * @property string $Score
@@ -27,7 +28,7 @@ use yii\behaviors\TimestampBehavior;
  * @property OddsGGMarket[] $markets
  * @property OddsGGOdd[] $odds
  */
-class OddsGGMatch extends \yii\db\ActiveRecord
+class OddsGGMatch extends ActiveRecordWithUpsert
 {
 	const STATUS_NOT_STARTED = 0;
 	const STATUS_IN_PLAY = 1;
@@ -55,8 +56,9 @@ class OddsGGMatch extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['id', 'SportId', 'TournamentId', 'HomeTeamId', 'AwayTeamId', 'Score'], 'required'],
-            [['id', 'SportId', 'TournamentId', 'Status', 'HomeTeamId', 'AwayTeamId'], 'integer'],
+	        // , 'TournamentId' not all tournaments are available through the API
+            [['id', 'StartTime', 'SportId', 'HomeTeamId', 'AwayTeamId', 'Score'], 'required'],
+            [['id', 'StartTime', 'SportId', 'TournamentId', 'Status', 'HomeTeamId', 'AwayTeamId'], 'integer'],
 	        [['Status'], 'in', 'range' => self::$statuses ],
 	        [
 		        [ 'SportId' ],
@@ -89,54 +91,6 @@ class OddsGGMatch extends \yii\db\ActiveRecord
 	        [['Score', 'StreamUrl'], 'string'],
         ];
     }
-
-	/**
-	 * Update or insert record
-	 *
-	 * @param int $id
-	 * @param int $SportId
-	 * @param int $TournamentId
-	 * @param int $HomeTeamId
-	 * @param int $AwayTeamId
-	 * @param int $Status
-	 * @param string $Score
-	 * @param string $StreamUrl
-	 *
-	 * @return OddsGGMatch|static
-	 */
-	public static function upsert(
-		int $id,
-		int $SportId,
-		int $TournamentId,
-		int $HomeTeamId,
-		int $AwayTeamId,
-		string $Score,
-		int $Status = null,
-		string $StreamUrl = null
-	) {
-		// Find record by id
-		$Record = self::findOne($id);
-
-		// If no record found, make it
-		if ( ! $Record) {
-			$Record = new self();
-			$Record->id = $id;
-		}
-
-		// Update parameters
-		$Record->Name = $name;
-		$Record->MatchId = $MatchId;
-		$Record->IsLive = $IsLive;
-		$Record->Status = $Status;
-		$Record->Timestamp = $Timestamp;
-
-		// If record changed, save it
-		if ( $Record->dirtyAttributes && ! $Record->save() ) {
-			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
-		}
-
-		return $Record;
-	}
 
     /**
      * @inheritdoc

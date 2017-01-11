@@ -11,14 +11,14 @@ use yii\behaviors\TimestampBehavior;
  * This is the model class for table "oddsgg_sport".
  *
  * @property integer $id
- * @property string $name
+ * @property string $Name
  * @property integer $created_at
  * @property integer $updated_at
  *
  * @property OddsGGLeague[] $leagues
  * @property OddsGGMatch[] $matches
  */
-class OddsGGSport extends \yii\db\ActiveRecord
+class OddsGGSport extends ActiveRecordWithUpsert
 {
     /**
      * @inheritdoc
@@ -34,9 +34,9 @@ class OddsGGSport extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['id', 'name'], 'required'],
+            [['id', 'Name'], 'required'],
             [['id'], 'integer'],
-            [['name'], 'string'],
+            [['Name'], 'string'],
         ];
     }
 
@@ -57,47 +57,18 @@ class OddsGGSport extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'name' => yii::t('app', 'name'),
+            'Name' => yii::t('app', 'Name'),
         ];
     }
-
-	/**
-	 * Update or insert record
-	 *
-	 * @param $id
-	 * @param $name
-	 *
-	 * @return OddsGGSport|static
-	 */
-	public static function upsert($id, $name) {
-		// Find record by id
-		$Record = self::findOne($id);
-
-		// If no record found, make it
-		if ( ! $Record) {
-			$Record = new self();
-			$Record->id = $id;
-		}
-
-		// Update parameters
-		$Record->name = $name;
-
-		// If record changed, save it
-		if ( $Record->dirtyAttributes && ! $Record->save() ) {
-			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
-		}
-
-		return $Record;
-	}
 	
 	/**
      * @return array
      */
     public static function getForDropdown()
     {
-        $models = static::find()->orderBy('name')->all();
+        $models = static::find()->orderBy('Name')->all();
 
-        return ArrayHelper::map($models, 'id', 'name');
+        return ArrayHelper::map($models, 'id', 'Name');
     }
 
 

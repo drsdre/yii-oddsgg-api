@@ -24,7 +24,7 @@ use yii\behaviors\TimestampBehavior;
  * @property OddsGGMatch $match
  * @property OddsGGMarket $market
  */
-class OddsGGOdd extends \yii\db\ActiveRecord
+class OddsGGOdd extends ActiveRecordWithUpsert
 {
 	const STATUS_NOT_RESULTED = 0;
 	const STATUS_WIN = 1;
@@ -58,7 +58,8 @@ class OddsGGOdd extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['id', 'Name', 'Title', 'Value', 'IsActive', 'Status', 'MatchId', 'MarketId', 'Timestamp'], 'required'],
+        	// , 'IsActive', 'Status' requires premium account
+            [['id', 'Name', 'Title', 'Value', 'MatchId', 'MarketId', 'Timestamp'], 'required'],
             [['id', 'Status', 'MarketId', 'MarketId', 'Timestamp'], 'integer'],
 	        [['Status'], 'in', 'range' => self::$statuses ],
 	        [
@@ -108,45 +109,6 @@ class OddsGGOdd extends \yii\db\ActiveRecord
             'Timestamp' => yii::t('app', 'Time'),
         ];
     }
-
-	/**
-	 * Update or insert record
-	 *
-	 * @param int $id
-	 * @param string $Name
-	 * @param string $Title
-	 * @param bool $IsActive
-	 * @param int $Status
-	 * @param int $MatchId
-	 * @param int $Timestamp
-	 *
-	 * @return OddsGGOdd|static
-	 */
-	public static function upsert(int $id, string $Name, string $Title, bool $IsActive, int $Status, int $MatchId, int $Timestamp) {
-		// Find record by id
-		$Record = self::findOne($id);
-
-		// If no record found, make it
-		if ( ! $Record) {
-			$Record = new self();
-			$Record->id = $id;
-		}
-
-		// Update parameters
-		$Record->Name = $Name;
-		$Record->Title = $Title;
-		$Record->IsActive = $IsActive;
-		$Record->Status = $Status;
-		$Record->MatchId = $MatchId;
-		$Record->Timestamp = $Timestamp;
-
-		// If record changed, save it
-		if ( $Record->dirtyAttributes && ! $Record->save() ) {
-			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
-		}
-
-		return $Record;
-	}
 
 	/**
      * @return array

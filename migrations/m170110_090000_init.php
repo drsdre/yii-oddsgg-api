@@ -23,16 +23,16 @@ class m170110_090000_init extends Migration {
 		$this->createTable( OddsGGSport::tableName(), [
 			'id'         => $this->primaryKey(),
 			'Name'       => $this->string( 255 )->notNull(),
-			'created_at' => $this->int( 11 )->notNull(),
-			'updated_at' => $this->int( 11 )->notNull(),
+			'created_at' => $this->integer( 11 )->notNull(),
+			'updated_at' => $this->integer( 11 )->notNull(),
 		], $tableOptions );
 
 		$this->createTable( OddsGGLeague::tableName(), [
 			'id'           => $this->primaryKey(),
 			'CategoryName' => $this->string( 255 )->notNull(),
-			'SportId'      => $this->int( 11 )->notNull(),
-			'created_at'   => $this->int( 11 )->notNull(),
-			'updated_at'   => $this->int( 11 )->notNull(),
+			'SportId'      => $this->integer( 11 )->notNull(),
+			'created_at'   => $this->integer( 11 )->notNull(),
+			'updated_at'   => $this->integer( 11 )->notNull(),
 		], $tableOptions );
 
 		$this->addForeignKey( OddsGGLeague::tableName() . '_SportId', OddsGGLeague::tableName(), 'SportId',
@@ -41,33 +41,34 @@ class m170110_090000_init extends Migration {
 		$this->createTable( OddsGGTournament::tableName(), [
 			'id'         => $this->primaryKey(),
 			'Name'       => $this->string( 255 )->notNull(),
-			'LeagueId' => $this->int( 11 )->notNull(),
-			'Timestamp'  => $this->int( 11 )->notNull(),
-			'created_at' => $this->int( 11 )->notNull(),
-			'updated_at' => $this->int( 11 )->notNull(),
+			'LeagueId' => $this->integer( 11 )->notNull(),
+			'Timestamp'  => $this->integer( 11 )->notNull(),
+			'created_at' => $this->integer( 11 )->notNull(),
+			'updated_at' => $this->integer( 11 )->notNull(),
 		], $tableOptions );
 
-		$this->addForeignKey( OddsGGTournament::tableName() . '_LeagueId', OddsGGLeague::tableName(), 'LeagueId',
-			OddsGGSport::tableName(), 'id', 'CASCADE', 'RESTRICT' );
+		$this->addForeignKey( OddsGGTournament::tableName() . '_LeagueId', OddsGGTournament::tableName(), 'LeagueId',
+			OddsGGLeague::tableName(), 'id', 'CASCADE', 'RESTRICT' );
 
 		$this->createTable( OddsGGTeam::tableName(), [
 			'id'         => $this->primaryKey(),
 			'Name'       => $this->string( 255 )->notNull(),
-			'created_at' => $this->int( 11 )->notNull(),
-			'updated_at' => $this->int( 11 )->notNull(),
+			'created_at' => $this->integer( 11 )->notNull(),
+			'updated_at' => $this->integer( 11 )->notNull(),
 		], $tableOptions );
 
 		$this->createTable( OddsGGMatch::tableName(), [
 			'id'           => $this->primaryKey(),
-			'SportId'      => $this->int( 11 )->notNull(),
-			'TournamentId' => $this->int( 11 )->notNull(),
-			'HomeTeamId'   => $this->int( 11 )->notNull(),
-			'AwayTeamId'   => $this->int( 11 )->notNull(),
+			'SportId'      => $this->integer( 11 )->notNull(),
+			'TournamentId' => $this->integer( 11 )->null(),
+			'StartTime'    => $this->integer( 11 )->notNull(),
+			'HomeTeamId'   => $this->integer( 11 )->notNull(),
+			'AwayTeamId'   => $this->integer( 11 )->notNull(),
 			'Score'        => $this->string( 255 )->notNull(),
-			'Status'       => $this->int( 11 )->null(),
-			'StreamUrl'    => $this->int( 4000 )->null(),
-			'created_at'   => $this->int( 11 )->notNull(),
-			'updated_at'   => $this->int( 11 )->notNull(),
+			'Status'       => $this->integer( 11 )->null(),
+			'StreamUrl'    => $this->text()->null(),
+			'created_at'   => $this->integer( 11 )->notNull(),
+			'updated_at'   => $this->integer( 11 )->notNull(),
 		], $tableOptions );
 
 		$this->addForeignKey( OddsGGMatch::tableName() . '_SportId', OddsGGMatch::tableName(), 'SportId',
@@ -85,12 +86,12 @@ class m170110_090000_init extends Migration {
 		$this->createTable( OddsGGMarket::tableName(), [
 			'id'         => $this->primaryKey(),
 			'Name'       => $this->string( 255 )->notNull(),
-			'MatchId'    => $this->int( 11 )->notNull(),
+			'MatchId'    => $this->integer( 11 )->notNull(),
 			'IsLive'     => $this->boolean()->notNull(),
-			'Status'     => $this->int( 11 )->notNull(),
-			'Timestamp'  => $this->int( 11 )->notNull(),
-			'created_at' => $this->int( 11 )->notNull(),
-			'updated_at' => $this->int( 11 )->notNull(),
+			'Status'     => $this->integer( 11 )->notNull(),
+			'Timestamp'  => $this->integer( 11 )->notNull(),
+			'created_at' => $this->integer( 11 )->notNull(),
+			'updated_at' => $this->integer( 11 )->notNull(),
 		], $tableOptions );
 
 		$this->addForeignKey( OddsGGMarket::tableName() . '_MatchId', OddsGGMarket::tableName(), 'MatchId',
@@ -101,13 +102,13 @@ class m170110_090000_init extends Migration {
 			'Name'       => $this->string( 255 )->notNull(),
 			'Title'      => $this->string( 255 )->notNull(),
 			'Value'      => $this->string( 255 )->notNull(),
-			'IsActive'   => $this->boolean()->notNull(),
-			'Status'     => $this->int( 11 )->notNull(),
-			'MatchId'    => $this->int( 11 )->notNull(),
-			'MarketId'   => $this->int( 11 )->notNull(),
-			'Timestamp'  => $this->int( 11 )->notNull(),
-			'created_at' => $this->int( 11 )->notNull(),
-			'updated_at' => $this->int( 11 )->notNull(),
+			'IsActive'   => $this->boolean()->null(), // Premium only
+			'Status'     => $this->integer( 11 )->null(), // Premium only
+			'MatchId'    => $this->integer( 11 )->notNull(),
+			'MarketId'   => $this->integer( 11 )->notNull(),
+			'Timestamp'  => $this->integer( 11 )->notNull(),
+			'created_at' => $this->integer( 11 )->notNull(),
+			'updated_at' => $this->integer( 11 )->notNull(),
 		], $tableOptions );
 
 		$this->addForeignKey( OddsGGOdd::tableName() . '_MatchId', OddsGGOdd::tableName(), 'MatchId',

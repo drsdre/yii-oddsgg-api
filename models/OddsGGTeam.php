@@ -10,14 +10,14 @@ use yii\behaviors\TimestampBehavior;
  * This is the model class for table "oddsgg_team".
  *
  * @property integer $id
- * @property string $name
+ * @property string $Name
  * @property integer $created_at
  * @property integer $updated_at
  *
  * @property OddsGGMatch[] $homeMatches
  * @property OddsGGMatch[] $awayMatches
  */
-class OddsGGTeam extends \yii\db\ActiveRecord
+class OddsGGTeam extends ActiveRecordWithUpsert
 {
     /**
      * @inheritdoc
@@ -33,9 +33,9 @@ class OddsGGTeam extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['id', 'name'], 'required'],
+            [['id', 'Name'], 'required'],
             [['id'], 'integer'],
-            [['name'], 'string'],
+            [['Name'], 'string'],
         ];
     }
 
@@ -56,47 +56,18 @@ class OddsGGTeam extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'name' => yii::t('app', 'name'),
+            'Name' => yii::t('app', 'Name'),
         ];
     }
-
-	/**
-	 * Update or insert record
-	 *
-	 * @param $id
-	 * @param $name
-	 *
-	 * @return OddsGGTeam|static
-	 */
-	public static function upsert($id, $name) {
-		// Find record by id
-		$Record = self::findOne($id);
-
-		// If no record found, make it
-		if ( ! $Record) {
-			$Record = new self();
-			$Record->id = $id;
-		}
-
-		// Update parameters
-		$Record->name = $name;
-
-		// If record changed, save it
-		if ( $Record->dirtyAttributes && ! $Record->save() ) {
-			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
-		}
-
-		return $Record;
-	}
 
     /**
      * @return array
      */
     public static function getForDropdown()
     {
-        $models = static::find()->orderBy('name')->all();
+        $models = static::find()->orderBy('Name')->all();
 
-        return ArrayHelper::map($models, 'id', 'name');
+        return ArrayHelper::map($models, 'id', 'Name');
     }
 
 	/**

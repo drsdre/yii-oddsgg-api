@@ -14,14 +14,14 @@ use yii\behaviors\TimestampBehavior;
  * @property integer $MatchId
  * @property integer $IsLive
  * @property integer $Status
- * @property string $Timestamp
+ * @property integer $Timestamp
  * @property integer $created_at
  * @property integer $updated_at
  *
  * @property OddsGGMatch $match
  * @property OddsGGOdd $odds
  */
-class OddsGGMarket extends \yii\db\ActiveRecord
+class OddsGGMarket extends ActiveRecordWithUpsert
 {
 	const STATUS_ACTIVE = 0;
 	const STATUS_SUSPENDED = 1;
@@ -49,7 +49,7 @@ class OddsGGMarket extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['id', 'Name', 'MatchId', 'IsLive', 'Status', 'Timestamp'], 'required'],
+            [['id', 'Name', 'MatchId', 'IsLive', 'Timestamp'], 'required'],
             [['id', 'MatchId', 'Status', 'Timestamp'], 'integer'],
 	        [['Status'], 'in', 'range' => self::$statuses ],
 	        [
@@ -89,43 +89,6 @@ class OddsGGMarket extends \yii\db\ActiveRecord
         ];
     }
 
-	/**
-	 * Update or insert record
-	 *
-	 * @param int $id
-	 * @param string $Name
-	 * @param int $MatchId
-	 * @param bool $IsLive
-	 * @param int $Status
-	 * @param int $Timestamp
-	 *
-	 * @return OddsGGMarket|static
-	 */
-	public static function upsert(int $id, string $Name, int $MatchId, bool $IsLive, int $Status, int $Timestamp) {
-		// Find record by id
-		$Record = self::findOne($id);
-
-		// If no record found, make it
-		if ( ! $Record) {
-			$Record = new self();
-			$Record->id = $id;
-		}
-
-		// Update parameters
-		$Record->Name = $name;
-		$Record->MatchId = $MatchId;
-		$Record->IsLive = $IsLive;
-		$Record->Status = $Status;
-		$Record->Timestamp = $Timestamp;
-
-		// If record changed, save it
-		if ( $Record->dirtyAttributes && ! $Record->save() ) {
-			new Exception('Save '.self::className().' failed: '.print_r($Record->getErrors(), true));
-		}
-
-		return $Record;
-	}
-
     /**
      * @return array
      */
@@ -152,6 +115,22 @@ class OddsGGMarket extends \yii\db\ActiveRecord
 		} else {
 			return $status;
 		}
+	}
+
+	/**
+	 * Remove obsolete markets
+	 */
+	public static function removeObsolete() {
+		// Find not active items with a timestamp more than two months ago
+		/*$Markets = static::find()
+			->where([ 'not', 'Status', self::STATUS_ACTIVE ])
+			->andWhere([ '<', 'Timestamp', strtotime("-2 month") ])
+			->all();*/
+
+		// Remove
+		/*foreach($Markets as $Market) {
+			$Market->delete();
+		}*/
 	}
 
 	/**

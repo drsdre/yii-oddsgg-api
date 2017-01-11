@@ -8,7 +8,11 @@
 
 namespace drsdre\OddsGG;
 
+use drsdre\OddsGG\models\ActiveRecordWithUpsert;
 use yii\db\ActiveRecord;
+use yii\helpers\Json;
+use yii\httpclient\Response;
+use drsdre\OddsGG\Exception;
 
 use drsdre\OddsGG\models\OddsGGLeague;
 use drsdre\OddsGG\models\OddsGGMarket;
@@ -18,7 +22,6 @@ use drsdre\OddsGG\models\OddsGGSport;
 use drsdre\OddsGG\models\OddsGGTeam;
 use drsdre\OddsGG\models\OddsGGTournament;
 
-use drsdre\OddsGG\Exception;
 
 /**
  * Class Cache
@@ -40,14 +43,14 @@ class Cache {
 	 * Increase statistic
 	 * @param $stat_name
 	 */
-	protected function incStat($stat_name, $amount = 1) {
-		if ($amount == 0) {
+	protected function incStat( $stat_name, $amount = 1 ) {
+		if ( $amount == 0 ) {
 			return;
 		}
-		if (isset($this->_stats[$stat_name])) {
-			$this->_stats[$stat_name] += $amount;
+		if ( isset( $this->_stats[ $stat_name ] ) ) {
+			$this->_stats[ $stat_name ] += $amount;
 		} else {
-			$this->_stats[$stat_name] = $amount;
+			$this->_stats[ $stat_name ] = $amount;
 		}
 	}
 
@@ -64,140 +67,348 @@ class Cache {
 	 *
 	 * @return bool
 	 */
-	public function update($init = false) {
+	public function updateAll( $init = false ) {
 		// Mark time when update starts (make sure server time is set to UTC)
 		$update_start_time = time();
+		$result            = true;
 
-		// Get data from API
-		
-		// Update sports data
-		$sports = $this->_client->get('Sports', [], ['isUpdate' => $init == false]);
-
-		foreach ($sports as $sport) {
-			OddsGGSport::upsert(
-				$sport->id,
-				$sport->name
-			);
-
-			// Update League data
-			$leagues = $this->_client->get('Leagues/Sport/'.$sport->id, [], ['isUpdate' => $init == false]);
-
-			foreach ($leagues as $league) {
-				OddsGGLeague::upsert(
-					$leagues->id,
-					$leagues->CategorryName,
-					$this->SportId
-				);
-
-				foreach ($leagues->Tournaments as $tournament) {
-					OddsGGTournament::upsert(
-						$tournament->id,
-						$tournament->Name,
-						$tournament->CategoryId,
-						$tournament-Timestamp
-					);
-				}
-			}
-
-			// Update match data
-			$matches = $this->_client->get('Matches/Sport/'.$sport->id, [], ['isUpdate' => $init == false]);
-
-			foreach ($matches as $match) {
-
-				OddsGGTeam::upsert(
-					$match->HomeTeamId,
-					$match->HomeTeamName
-				);
-
-				OddsGGTeam::upsert(
-					$match->AwayTeamId,
-					$match->AwayTeamName
-				);
-
-				OddsGGMatch::upsert(
-					$match->id,
-					$match->SportId,
-					$match->TournamentId,
-					$match->HomeTeamId,
-					$match->AwayTeamId,
-					isset($match->Status)?$match->Status:null,
-					isset($match->StreamUrl)?$match->StreamUrl:null
-				);
-			}
-
-			// Update Market data
-			$markets = $this->_client->get('Markets/Sport/'.$sport->id, [], ['isUpdate' => $init == false]);
-
-			foreach ($markets as $market) {
-				OddsGGMarket::upsert(
-					$market->id,
-					$market->Name,
-					$market->MatchId,
-					$market->IsLive,
-					$market->MatchId,
-					isset($match->Status)?$match->Status:null,
-					$market->Timestamp
-				);
-
-				foreach ($market->Odds as $odd) {
-					OddsGGOdd::upsert(
-						$odd->id,
-						$odd->Name,
-						$odd->Title,
-						$odd->Value,
-						$odd->IsActive,
-						isset($match->Status)?$match->Status:null,
-						$odd->MatchId,
-						$odd->MarketId,
-						$market->Timestamp
-					);
-				}
-			}
-
+		if ( ! $this->updateSports($init) ) {
+			$result = false;
 		}
 
-		//$this->_client->SetLastUpdate(['utcTimeStamp' => date(DATE_ATOM, $update_start_time)]);
+		// Get data for all sports
+		foreach ( OddsGGSport::find()->all() as $Sport ) {
 
-		return true;
+			if ( ! $this->updateLeagueTournamentsBySport($Sport->id, $init) ) {
+				$result = false;
+			}
+
+			if ( ! $this->updateMatchesBySport( $Sport->id, $init ) ) {
+				$result = false;
+			}
+
+			// Does not provide any results, switched to using league based market retrieval 11-01-2017
+			/*
+			if ( ! $this->updateMarketsBySport($Sport->id, $init) ) {
+				$result = false;
+			}
+			*/
+		}
+
+		// Get data for all leagues
+		foreach ( OddsGGLeague::find()->all() as $League ) {
+			if ( ! $this->updateMarketsByLeague( $League->id, $init ) ) {
+				$result = false;
+			}
+		}
+
+		return $result;
 	}
 
 	/**
 	 * Expire obsolete data in the cache
 	 */
 	public function expireData() {
-		$this->incStat('expire_market', OddsGGEventMarket::expireOpen() );
-		$this->incStat('expire_selection', OddsGGMarketSelection::expireOpen() );
+		$this->incStat( 'expire_market', OddsGGMarket::removeObsolete() );
+
 		return true;
 	}
 
 	/**
-	 * Store data record and track change statistics
+	 * Check upsert action and generate statistics
 	 *
-	 * @param ActiveRecord $ActiveRecord
+	 * @param ActiveRecordWithUpsert $Record
 	 *
-	 * @return bool false if not saved
+	 * @return bool if upsert succesfull
 	 */
-	protected function storeDataRecord( ActiveRecord $ActiveRecord ) {
-		if ( $ActiveRecord->getDirtyAttributes() ) {
-			$unsaved_record = clone $ActiveRecord;
+	protected function checkUpsert( ActiveRecordWithUpsert $Record ) {
+		// Check if errors occured
+		if ( $Record->hasErrors() ) {
+			$this->incStat( 'Error saving ' . $Record->tableName() );
+			// Write log
+			\yii::error( 'Error saving ' . $Record->tableName() . ' errors:' . print_r( $Record->getErrors(), true ) );
 
-			// Save record
-			if ( ! $ActiveRecord->save() ) {
-				// Create error message
-				$message = "Save error: ".json_encode($ActiveRecord->errors)."\n";
-				$message .= "Record data: ".json_encode($ActiveRecord->getAttributes())."\n";
-				trigger_error($message, E_USER_WARNING);
-				$this->incStat('error_'.$ActiveRecord->tableName());
-				return false;
-			}
+			return false;
+		} elseif ( $Record->upsertNewRecord ) {
+			$this->incStat( 'New ' . $Record->tableName() );
+		} elseif ( $Record->upsertUpdated ) {
+			$this->incStat( 'Updated ' . $Record->tableName() );
+		}
 
-			// Store statistics
-			if ($unsaved_record->isNewRecord) {
-				$this->incStat('new_'.$ActiveRecord->tableName());
-			} else {
-				$this->incStat('update_'.$ActiveRecord->tableName());
+		return true;
+	}
+
+	/**
+	 * Update Sports
+	 *
+	 * @param $bool init
+	 *
+	 * @return bool if update succesfull
+	 */
+	public function updateSports( bool $init = false ) {
+		// Get the data from API
+		$SportsResponse = $this->_client
+			->get( 'Sports', [], [ 'isUpdate' => $init == true ? 'false' : 'true' ] )
+			->send()
+		;
+
+		// Check if API response is valid
+		if ( ! $SportsResponse->isOk ) {
+			return false;
+		}
+
+		foreach ( $SportsResponse->data as $sport ) {
+			$OddsGGSport = OddsGGSport::upsert(
+				$sport['Id'],
+				$sport
+			);
+			$this->checkUpsert( $OddsGGSport );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Update League Tournaments by Sport from API
+	 *
+	 * @param int $SportId
+	 * @param bool $init
+	 *
+	 * @return bool if update succesfull
+	 */
+	public function updateLeagueTournamentsBySport( int $SportId, bool $init = false ) {
+		// Get the data from API
+		$LeaguesResponse = $this->_client
+			->get( 'Leagues/Sport/' . $SportId, [], [ 'isUpdate' => $init == true ? 'false' : 'true' ] )
+			->send()
+		;
+
+		// Check if API response is valid
+		if ( ! $LeaguesResponse->isOk ) {
+			return false;
+		}
+
+		$this->storeLeagueTournaments( $LeaguesResponse->data );
+
+		return true;
+	}
+
+	/**
+	 * Update League Tournaments by Tournament from API
+	 *
+	 * @param int $SportId
+	 * @param bool $init
+	 *
+	 * @return bool if update succesfull
+	 */
+	public function updateLeagueTournamentsByTournament( int $TournamentId, bool $init = false ) {
+		// Get the data from API
+		$LeaguesResponse = $this->_client
+			->get( 'Leagues/Tournaments/' . $TournamentId, [], [ 'isUpdate' => $init == true ? 'false' : 'true' ] )
+			->send()
+		;
+
+		// Check if API response is valid
+		if ( ! $LeaguesResponse->isOk ) {
+			return false;
+		}
+
+		$this->storeLeagueTournaments( $LeaguesResponse->data );
+
+		return true;
+	}
+
+	/**
+	 * Store League Tournament Data from API
+	 *
+	 * @param array $LeagueTournamentData
+	 */
+	protected function storeLeagueTournaments( array $LeagueTournamentData ) {
+		foreach ( $LeagueTournamentData as $league ) {
+			$OddsGGLeague = OddsGGLeague::upsert(
+				$league['Id'],
+				$league
+			);
+			// If upsert not okay, skip further processing of this record
+			if ( ! $this->checkUpsert( $OddsGGLeague ) ) {
+				continue;
+			};
+
+			// Process the tournaments
+			foreach ( $league['Tournaments'] as $tournament ) {
+				$tournament['Timestamp'] = strtotime( $tournament['Timestamp'] );
+				$tournament['LeagueId']  = $tournament['CategoryId'];
+				unset( $tournament['CategoryId'] );
+
+				$OddsGGTournament = OddsGGTournament::upsert(
+					$tournament['Id'],
+					$tournament
+				);
+				$this->checkUpsert( $OddsGGTournament );
 			}
 		}
+	}
+
+	/**
+	 * Update Matches by Sport from API
+	 *
+	 * @param int $SportId
+	 * @param bool $init
+	 *
+	 * @return bool if update succesfull
+	 */
+	public function updateMatchesBySport( int $SportId, bool $init = false ) {
+		// Get the data from API
+		$MatchesResponse = $this->_client
+			->get( 'Matches/Sport/' . $SportId, [], [ 'isUpdate' => $init == true ? 'false' : 'true' ] )
+			->send()
+		;
+
+		// Check if API response is valid
+		if ( ! $MatchesResponse->isOk ) {
+			return false;
+		}
+
+		$this->storeMatches( $MatchesResponse->data );
+
 		return true;
+	}
+
+	/**
+	 * Store match data from API
+	 *
+	 * @param array $MatchData
+	 */
+	protected function storeMatches( array $MatchData ) {
+		foreach ( $MatchData as $match ) {
+
+			$OddsGGTeam = OddsGGTeam::upsert(
+				$match['HomeTeamId'],
+				[ 'Name' => $match['HomeTeamName'] ]
+			);
+
+			// If upsert not okay, skip further processing of this record
+			if ( ! $this->checkUpsert( $OddsGGTeam ) ) {
+				continue;
+			};
+
+			$OddsGGTeam = OddsGGTeam::upsert(
+				$match['AwayTeamId'],
+				[ 'Name' => $match['AwayTeamName'] ]
+			);
+
+			// If upsert not okay, skip further processing of this record
+			if ( ! $this->checkUpsert( $OddsGGTeam ) ) {
+				continue;
+			};
+
+			unset( $match['HomeTeamName'], $match['AwayTeamName'] );
+			$match['StartTime'] = strtotime( $match['StartTime'] );
+
+			$OddsGGMatch = OddsGGMatch::upsert(
+				$match['Id'],
+				$match
+			);
+
+			// Error handling when tournament ID is not know
+			$errors = $OddsGGMatch->getErrors();
+			if (
+				count( $errors ) == 1 &&
+				isset( $errors['TournamentId'] ) &&
+				array_search('Tournament is invalid.', $errors['TournamentId']) !== false
+			) {
+				// Clear tournment ID
+				$match['TournamentId'] = null;
+				$OddsGGMatch           = OddsGGMatch::upsert(
+					$match['Id'],
+					$match
+				);
+			}
+
+			$this->checkUpsert( $OddsGGMatch );
+		}
+	}
+
+	/**
+	 * Update Markets by Sport from API
+	 *
+	 * @param int $SportId
+	 * @param bool $init
+	 *
+	 * @return bool if update succesfull
+	 */
+	public function updateMarketsBySport( int $SportId, bool $init = false ) {
+
+		// Get the data from API
+		$MarketsResponse = $this->_client
+			->get( 'Markets/Sport/' . $SportId, [], [ 'isUpdate' => $init == true ? 'false' : 'true' ] )
+			->send()
+		;
+
+		// Check if API response is valid
+		if ( ! $MarketsResponse->isOk ) {
+			return false;
+		}
+
+		$this->storeMarkets( $MarketsResponse->data );
+
+		return true;
+	}
+
+	/**
+	 * Update Markets by League from API
+	 *
+	 * @param int $SportId
+	 * @param bool $init
+	 *
+	 * @return bool if update succesfull
+	 */
+	public function updateMarketsByLeague( int $LeagueId, bool $init = false ) {
+
+		// Get the data from API
+		$MarketsResponse = $this->_client
+			->get( 'Markets/Categories/' . $LeagueId, [], [ 'isUpdate' => $init == true ? 'false' : 'true' ] )
+			->send()
+		;
+
+		// Check if API response is valid
+		if ( ! $MarketsResponse->isOk ) {
+			return false;
+		}
+
+		$this->storeMarkets( $MarketsResponse->data );
+
+		return true;
+	}
+
+	/**
+	 * Store market data from API
+	 *
+	 * @param array $MarketData
+	 */
+	protected function storeMarkets( array $MarketData ) {
+		foreach ( $MarketData as $market ) {
+			$market['Timestamp'] = strtotime( $market['Timestamp'] );
+			$OddsGGMarket        = OddsGGMarket::upsert(
+				$market['Id'],
+				$market
+			);
+
+			// If upsert not okay, skip further processing of this record
+			if ( ! $this->checkUpsert( $OddsGGMarket ) ) {
+				continue;
+			};
+
+			// Store the odds
+			foreach ( $market['Odds'] as $odd ) {
+				$odd['Timestamp'] = strtotime( $odd['Timestamp'] );
+				$odd['Value'] = (string) $odd['Value'];
+				$OddsGGOdd        = OddsGGOdd::upsert(
+					$odd['Id'],
+					$odd
+				);
+				$this->checkUpsert( $OddsGGOdd );
+			}
+		}
 	}
 }
