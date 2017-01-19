@@ -152,6 +152,6 @@ class OddsGGMarket extends ActiveRecordWithUpsert
 	public function getOdds()
 	{
 		return $this->hasMany(OddsGGOdd::className(), ['MarketId' => 'id'])
-		            ->inverseOf('markets');
+		            ->inverseOf('market');
 	}
 }

@@ -94,4 +94,14 @@ class OddsGGTournament extends ActiveRecordWithUpsert
         return $this->hasOne(OddsGGLeague::className(), [ 'id' => 'LeagueId'])
                     ->inverseOf('tournaments');
     }
+
+
+	/**
+	 * @return \yii\db\ActiveQuery
+	 */
+	public function getMatches()
+	{
+		return $this->hasMany(OddsGGMatch::className(), [ 'MatchId' => 'id'])
+		            ->inverseOf('tournament');
+	}
 }

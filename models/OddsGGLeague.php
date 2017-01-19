@@ -99,7 +99,7 @@ class OddsGGLeague extends ActiveRecordWithUpsert
 	 */
 	public function getTournaments()
 	{
-		return $this->hasMany(OddsGGCTournament::className(), ['LeagueId' => 'id'])
+		return $this->hasMany(OddsGGTournament::className(), ['LeagueId' => 'id'])
 		            ->inverseOf('league');
 	}
 }
