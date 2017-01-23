@@ -159,7 +159,7 @@ class OddsGGMatch extends ActiveRecordWithUpsert
     public function getSport()
     {
         return $this->hasOne(OddsGGSport::className(), ['id' => 'SportId'])
-            ->inverseOf('match');
+            ->inverseOf('matches');
     }
 
 	/**
