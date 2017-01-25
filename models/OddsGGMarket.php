@@ -51,7 +51,7 @@ class OddsGGMarket extends ActiveRecordWithUpsert
         return [
             [['id', 'Name', 'MatchId', 'IsLive', 'Timestamp'], 'required'],
             [['id', 'MatchId', 'Status', 'Timestamp'], 'integer'],
-	        [['Status'], 'in', 'range' => self::$statuses ],
+	        [['Status'], 'in', 'range' => array_keys(self::$statuses) ],
 	        [
 		        [ 'MatchId' ],
 		        'exist',

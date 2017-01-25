@@ -61,7 +61,7 @@ class OddsGGOdd extends ActiveRecordWithUpsert
         	// , 'IsActive', 'Status' requires premium account
             [['id', 'Name', 'Title', 'Value', 'MatchId', 'MarketId', 'Timestamp'], 'required'],
             [['id', 'Status', 'MarketId', 'MarketId', 'Timestamp'], 'integer'],
-	        [['Status'], 'in', 'range' => self::$statuses ],
+	        [['Status'], 'in', 'range' => array_keys(self::$statuses) ],
 	        [
 		        [ 'MatchId' ],
 		        'exist',

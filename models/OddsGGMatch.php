@@ -59,7 +59,7 @@ class OddsGGMatch extends ActiveRecordWithUpsert
 	        // , 'TournamentId' not all tournaments are available through the API
             [['id', 'StartTime', 'SportId', 'HomeTeamId', 'AwayTeamId', 'Score'], 'required'],
             [['id', 'StartTime', 'SportId', 'TournamentId', 'Status', 'HomeTeamId', 'AwayTeamId'], 'integer'],
-	        [['Status'], 'in', 'range' => self::$statuses ],
+	        [['Status'], 'in', 'range' => array_keys(self::$statuses) ],
 	        [
 		        [ 'SportId' ],
 		        'exist',
