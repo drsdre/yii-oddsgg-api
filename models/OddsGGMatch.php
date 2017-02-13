@@ -1,8 +1,15 @@
 <?php
+/**
+ * This file is part of the Yii2-oddsgg-api extension
+ *
+ * @author Andre Schuurman <andre.schuurman+yii2-oddsgg-api@gmail.com>
+ * @license MIT License
+ */
 
 namespace drsdre\OddsGG\models;
 
 use Yii;
+use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
 use yii\behaviors\TimestampBehavior;
 
@@ -28,8 +35,10 @@ use yii\behaviors\TimestampBehavior;
  * @property OddsGGMarket[] $markets
  * @property OddsGGOdd[] $odds
  */
-class OddsGGMatch extends ActiveRecordWithUpsert
+class OddsGGMatch extends ActiveRecord
 {
+	use ActiveRecordUpsertTrait;
+
 	const STATUS_NOT_STARTED = 0;
 	const STATUS_IN_PLAY = 1;
 	const STATUS_FINISHED = 2;

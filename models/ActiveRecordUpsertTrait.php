@@ -1,13 +1,17 @@
 <?php
+/**
+ * This file is part of the Yii2-oddsgg-api extension
+ *
+ * @author Andre Schuurman <andre.schuurman+yii2-oddsgg-api@gmail.com>
+ * @license MIT License
+ */
+
 namespace drsdre\OddsGG\models;
 
 /**
  * ActiveRecordWithUpsert extends ActiveRecord with upsert function
- *
- * User: aschuurman
- * Date: 10/01/2017
  */
-class ActiveRecordWithUpsert extends \yii\db\ActiveRecord {
+trait ActiveRecordUpsertTrait {
 
 	/** @var bool $upsertNewRecord Upsert New Record tracking */
 	public $upsertNewRecord = false;

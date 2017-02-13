@@ -1,8 +1,15 @@
 <?php
+/**
+ * This file is part of the Yii2-oddsgg-api extension
+ *
+ * @author Andre Schuurman <andre.schuurman+yii2-oddsgg-api@gmail.com>
+ * @license MIT License
+ */
+
 namespace drsdre\OddsGG;
 
 /**
- * Class Exception
+ * Odds.gg API Client Exception Component
  *
  * @author Andre Schuurman <andre.schuurman+yii2-oddsgg-api@gmail.com>
  */

@@ -1,8 +1,8 @@
 <?php
 /**
- * Nordicbet.com API Yii2 Client Component
+ * This file is part of the Yii2-oddsgg-api extension
  *
- * @author Andre Schuurman <andre.schuurman@gmail.com>
+ * @author Andre Schuurman <andre.schuurman+yii2-oddsgg-api@gmail.com>
  * @license MIT License
  */
 
@@ -22,9 +22,8 @@ use drsdre\OddsGG\models\OddsGGSport;
 use drsdre\OddsGG\models\OddsGGTeam;
 use drsdre\OddsGG\models\OddsGGTournament;
 
-
 /**
- * Class Cache
+ * Odds.gg Cache Component
  *
  * @author Andre Schuurman <andre.schuurman+yii2-oddsgg-api@gmail.com>
  */
